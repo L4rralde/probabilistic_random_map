@@ -52,8 +52,6 @@ class Path:
     def draw(self, **kwargs) -> None:
         GLUtils.draw_line(
             self.points,
-            size=2,
-            color=(0.5, 0.5, 0.5, 1),
             **kwargs
         )
 

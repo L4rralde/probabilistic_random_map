@@ -1,10 +1,23 @@
-from copy import copy
-
 import numpy as np
+from scipy.sparse import csr_array
+from scipy.sparse.csgraph import dijkstra
 
 from scene.scenes import Point
-from shapes import Segment
+from shapes import Segment, Path
 import collisions
+
+
+class IndexedSegment(Segment):
+    def __init__(
+            self,
+            point_i: Point,
+            point_j: Point,
+            pi_idx: int,
+            pj_idx: int
+    ) -> None:
+        super().__init__(point_i, point_j)
+        self.pi_idx = pi_idx
+        self.pj_idx = pj_idx
 
 class ProbabilisticRandomMap:
     def __init__(
@@ -15,9 +28,15 @@ class ProbabilisticRandomMap:
             goal: Point,
         ) -> None:
         self.polygons = polygons
-        self.milestones = [start, goal]
         self.radius = radius
+        self.reset(start, goal)
+
+    def reset(self, start: Point, goal: Point) -> None:
+        self.milestones = [start, goal]
         self.edges = []
+        self.connect([goal], 10.0)
+        self.path_exists = False
+        self.shortest_path = self.get_shortest_path()
 
     def sample(self, ntries: int = 5) -> list:
         milestones_candidates = [
@@ -36,12 +55,13 @@ class ProbabilisticRandomMap:
         self.milestones += new_milestones
         return new_milestones
 
-    def connect(self, new_milestones: list, th: float, max_nn: int = 5) -> None:
+    def connect(self, new_milestones: list, th: float, max_nn: int = 20) -> None:
         new_edges = []
-        for v in new_milestones:
+        last_processed_idx = len(self.milestones) - len(new_milestones)
+        for vi, v in enumerate(new_milestones):
             all_segments = (
-                Segment(u, v)
-                for u in self.milestones
+                IndexedSegment(u, v, ui, last_processed_idx+vi)
+                for ui, u in enumerate(self.milestones)
                 if u != v
             )
             near_segments = (
@@ -63,8 +83,48 @@ class ProbabilisticRandomMap:
         self.edges += new_edges
 
     def update(self, th: float = 0.5, max_milestones: int = 200) -> bool:
-        if len(self.milestones) > max_milestones + 1:
+        if self.path_exists or len(self.milestones) > max_milestones + 1:
             return False
         new_milestones = self.sample(1)
         self.connect(new_milestones, th)
+        self.shortest_path = self.get_shortest_path()
         return True
+
+    def get_matrix(self) -> np.ndarray:
+        n = len(self.milestones)
+        matrix = -np.ones((n, n))
+        for indexed_edge in self.edges:
+            distance = indexed_edge.len()
+            matrix[indexed_edge.pi_idx, indexed_edge.pj_idx] = distance
+            matrix[indexed_edge.pj_idx, indexed_edge.pi_idx] = distance
+        return matrix
+
+    def get_shortest_path(self) -> object:
+        matrix = self.get_matrix()
+        graph = csr_array(matrix)
+        graph[graph < 0] = np.inf
+
+        i = 0
+        j = 1
+
+        dist_matrix, predecessors = dijkstra(
+            csgraph=graph,
+            directed=False,
+            indices = i,
+            return_predecessors=True
+        )
+        if dist_matrix[j] == np.inf:
+            return
+
+        self.path_exists = True
+        path = []
+
+        current = j
+        while current != i:
+            path.append(current)
+            current = predecessors[current]
+        path.append(current)
+
+        vertices_path = [self.milestones[vertex_i] for vertex_i in path]
+
+        return Path(vertices_path)

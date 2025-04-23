@@ -1,5 +1,3 @@
-import random
-
 import pygame
 
 from scene.scenes import Point, GLScene, GLUtils
@@ -76,6 +74,17 @@ class PrmScene(PolygonScene):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_p:
                     self.pause = not self.pause
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
+                screen_point = Point(x, y)
+                ortho = self.to_ortho(screen_point)
+                ortho.y *= -1
+                if event.button == 1: #Left click
+                    self.start.center = ortho
+                    self.prm.reset(self.start.center, self.goal)
+                if event.button == 3: #Right click
+                    self.goal = ortho
+                    self.prm.reset(self.start.center, self.goal)
 
     def update(self) -> None:
         super().update()
@@ -86,9 +95,9 @@ class PrmScene(PolygonScene):
     def render(self) -> None:
         super().render()
         for segment in self.prm.edges:
-            segment.draw(
-                color = (251/255, 162/255, 87/255, 1.0),
-            )
+            segment.draw(color = (1.0, 0.8, 0.5, 1.0))
+        if self.prm.shortest_path:
+            self.prm.shortest_path.draw(color = (1.0, 0, 0, 1.0))
         for milestone in self.prm.milestones:
             vertex = Circle(milestone, 0.015)
             vertex.draw(color = (220/255, 88/255, 88/255, 1.0))
