@@ -2,6 +2,7 @@ from argparse import ArgumentParser, BooleanOptionalAction
 
 from special_scenes import PrmScene
 
+
 def parse_args() -> object:
     parser = ArgumentParser()
 
@@ -19,7 +20,8 @@ def parse_args() -> object:
     )
     parser.add_argument(
         '--thopological',
-        action = BooleanOptionalAction
+        action = BooleanOptionalAction,
+        help = "Utiliza un escenario topológico"
     )
 
     args = parser.parse_args()
