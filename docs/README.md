@@ -31,8 +31,8 @@ python src/main.py --help
 
 While running:
 
-- `p-key` to toggle pause.
-- `left mouse button` to relocate start.
-- `rigth mouse button` to relocate goal.
+- `pkey`: toggles pause.
+- `left mouse button`: relocates start.
+- `rigth mouse button`: relocates goal.
 
 Terminate by closing the window.
