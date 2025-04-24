@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, BooleanOptionalAction
 
 from special_scenes import PrmScene
 
@@ -12,16 +12,14 @@ def parse_args() -> object:
         help = "Ancho en píxeles de la ventana"
     )
     parser.add_argument(
-        "--height",
-        default = 720,
-        type = int,
-        help = "Altura en píxeles de la ventana"
-    )
-    parser.add_argument(
         "--fps",
         default = 20,
         type = int,
         help = "FPS de la simulación"
+    )
+    parser.add_argument(
+        '--thopological',
+        action = BooleanOptionalAction
     )
 
     args = parser.parse_args()
@@ -33,9 +31,10 @@ def main() -> None:
     scene = PrmScene(
         title = "PRM",
         width = args.width,
-        height = args.height,
+        height = args.width,
         max_fps = args.fps,
-        background_color = 	(1.0, 1.0, 1.0, 1.0)
+        thopological = args.thopological,
+        background_color = 	(1.0, 1.0, 1.0, 1.0),
     )
     scene.run()
 

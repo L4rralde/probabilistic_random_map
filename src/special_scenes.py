@@ -26,6 +26,12 @@ default_polygons = [
     Polygon([[0.33, -0.12], [0, -0.2], [0.2, 0.2], [0.4, 0.04], [0.8, 0.2], [0.62, -0.27]])
 ]
 
+patologycal_grid = [
+    Polygon([[-0.75, -0.4], [-0.7, 0.4], [-0.5, 0.4], [-0.45, -0.4]]),
+    Polygon([[-0.15, -0.4], [-0.2, 0.4], [0.2, 0.4], [0.15, -0.4]]),
+    Polygon([[0.45, -0.4], [0.5, 0.4], [0.7, 0.4], [0.75, -0.4]]),
+]
+
 
 class PolygonScene(GLScene):
     def __init__(
@@ -34,10 +40,12 @@ class PolygonScene(GLScene):
             width: int,
             height: int,
             max_fps: int = 60,
+            thopological: bool = False,
             **kwargs
         ) -> None:
         super().__init__(title, width, height, max_fps, **kwargs)
-        self.polygons = kwargs.get("polygons", default_polygons)
+        polygons = patologycal_grid if thopological else default_polygons
+        self.polygons = kwargs.get("polygons", polygons)
 
     def render(self) -> None:
         super().render()
