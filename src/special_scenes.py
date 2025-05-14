@@ -98,16 +98,11 @@ class PrmScene(PolygonScene):
         super().update()
         if self.pause:
             return
-        self.prm.update()
+        if not self.prm.finished():
+            self.prm.update()
 
     def render(self) -> None:
         super().render()
-        for segment in self.prm.edges:
-            segment.draw(color = (1.0, 0.8, 0.5, 1.0))
-        if self.prm.shortest_path:
-            self.prm.shortest_path.draw(color = (1.0, 0, 0, 1.0))
-        for milestone in self.prm.milestones:
-            vertex = Circle(milestone, 0.015)
-            vertex.draw(color = (220/255, 88/255, 88/255, 1.0))
+        self.prm.draw()
         self.blinker.blink()
         self.start.draw(color = (251/255, 20/255, 0, 1.0))
