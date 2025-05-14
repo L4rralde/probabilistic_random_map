@@ -2,7 +2,7 @@ import pygame
 
 from scene.scenes import Point, GLScene, GLUtils
 from shapes import Polygon, Circle
-from prm import ProbabilisticRandomMap
+from prm_star import ProbabilisticRandomMapStar
 
 
 class Blinker:
@@ -62,7 +62,7 @@ class PrmScene(PolygonScene):
         self.start = Circle(Point(0, 0), 0.03)
         self.goal = Point(-0.5, 0)
         self.pause = True
-        self.prm = ProbabilisticRandomMap(
+        self.prm = ProbabilisticRandomMapStar(
             self.polygons,
             self.start.radius,
             self.start.center,
