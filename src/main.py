@@ -1,6 +1,6 @@
 from argparse import ArgumentParser, BooleanOptionalAction
 
-from special_scenes import PrmScene
+from special_scenes import PrmStarScene
 
 
 def parse_args() -> object:
@@ -19,9 +19,15 @@ def parse_args() -> object:
         help = "FPS de la simulación"
     )
     parser.add_argument(
-        '--thopological',
+        '--patological',
         action = BooleanOptionalAction,
-        help = "Utiliza un escenario topológico"
+        help = "Utiliza un escenario Patológico"
+    )
+    parser.add_argument(
+        "--n_samples",
+        default = 50,
+        type = int,
+        help = "Número total de muestras en Xfree"
     )
 
     args = parser.parse_args()
@@ -30,13 +36,14 @@ def parse_args() -> object:
 def main() -> None:
     args = parse_args()
 
-    scene = PrmScene(
+    scene = PrmStarScene(
         title = "PRM",
         width = args.width,
         height = args.width,
         max_fps = args.fps,
-        thopological = args.thopological,
+        patological = args.patological,
         background_color = 	(1.0, 1.0, 1.0, 1.0),
+        n_samples = args.n_samples
     )
     scene.run()
 

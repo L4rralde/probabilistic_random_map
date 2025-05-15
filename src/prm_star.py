@@ -15,10 +15,7 @@ class MonteCarloFreeVolume:
         self._volume = -1
 
     def finished(self) -> bool:
-        did_finish = (
-            len(self.free_pts) > 1000 and
-            abs(self._volume - self._last_volume) < 2e-4
-        )
+        did_finish = len(self.free_pts) + len(self.non_free_pts) > 10000
         return did_finish
 
     def sample(self, ntries: int = 5) -> None:
@@ -36,7 +33,7 @@ class MonteCarloFreeVolume:
         num_non_free_pts = len(self.non_free_pts)
 
         self._last_volume = self._volume
-        self._volume = num_free_pts/(num_free_pts + num_non_free_pts)
+        self._volume = 4.0*num_free_pts/(num_free_pts + num_non_free_pts)
 
     def free_volume(self) -> float:
         return self._volume
@@ -49,26 +46,34 @@ class ProbabilisticRandomMapStar(ProbabilisticRandomMap):
             radius: float,
             start: Point,
             goal: Point,
+            n_samplles: int = 50,
+            free_volume: float = None,
+            **kwargs
         ) -> None:
+        self.n_samples = n_samplles
         super().__init__(polygons, radius, start, goal)
-        self.free_volume_sampler = MonteCarloFreeVolume(polygons)
-        self.state = "VOLUME"
-        self.gamma = -1
+        if free_volume is None:
+            self.free_volume_sampler = MonteCarloFreeVolume(polygons)
+            self.state = "VOLUME"
+            self.free_volume = 0.0
+            self.th = 0.0
+        else:
+            self.free_volume_sampler = None
+            self.state = "PLANNING"
+            self.free_volume = free_volume
+            self.th = self.get_optimal_th(self.free_volume)
 
     def update(self, th: float = 0.5, max_milestones: int = 200) -> bool:
-        d = 2
         if self.state == "VOLUME":
             self.free_volume_sampler.sample(10)
-            free_volume = self.free_volume_sampler.free_volume()
-            print(f"Free volume: {free_volume: .4f}")
             if self.free_volume_sampler.finished():
+                self.free_volume = self.free_volume_sampler.free_volume()
+                print(f"Free volume: {self.free_volume: .4f}")
                 self.state = "PLANNING"
-                self.gamma = 2 * ((1 + 1/d) * free_volume/np.pi)**(1/d)
+                self.th = self.get_optimal_th(self.free_volume)
+                self.connect([self.goal], self.th)
         if self.state == "PLANNING":
-            n = len(self.milestones)
-            th = self.gamma * (np.log2(n)/n)**(1/d)
-            super().update(th, max_milestones)
-            print(f"n: {n}, radio: {th :.4f}, costo: {self.cost :.4f}")
+            super().update(1.1*self.th, max_milestones)
 
     def draw(self) -> None:
         if self.state == "PLANNING":
@@ -76,12 +81,18 @@ class ProbabilisticRandomMapStar(ProbabilisticRandomMap):
         if self.state == "VOLUME":
             GLUtils.draw_points(
                 self.free_volume_sampler.free_pts,
-                color = (0.8, 0.1, 0.1, 1.0)
+                color = (0.85, 0.85, 0.85, 1.0)
             )
             GLUtils.draw_points(
                 self.free_volume_sampler.non_free_pts,
-                color = (0.1, 0.8, 0.1, 1.0)
+                color = (0.1, 0.1, 0.7, 1.0)
             )
 
     def finished(self) -> bool:
-        return len(self.milestones) > 500
+        return len(self.milestones) >= self.n_samples
+
+    def get_optimal_th(self, free_volume: float, d: int = 2) -> float:
+        n = self.n_samples
+        gamma = 2 * ((1 + 1/d) * free_volume/np.pi)**(1/d)
+        optimal_th = gamma * (np.log(n)/n)**(1/d)
+        return optimal_th

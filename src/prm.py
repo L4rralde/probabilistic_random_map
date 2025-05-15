@@ -30,16 +30,35 @@ class ProbabilisticRandomMap:
         ) -> None:
         self.polygons = polygons
         self.radius = radius
+        self.th = 0.5
         self.reset(start, goal)
 
-    def reset(self, start: Point, goal: Point) -> None:
-        self.milestones = [start, goal]
+    def reset(self, start: Point = None, goal: Point = None) -> None:
+        if start is None:
+            start = self.start
+        if goal is None:
+            goal = self.goal()
+        self.start = start
+        self.goal = goal
+        self.milestones = [self.start, self.goal]
         self.edges = []
-        self.connect([goal], 10.0)
+        self.connect([self.goal], self.th)
         self.path_exists = False
         self.cost = np.inf
         self.last_cost = np.inf
         self.shortest_path = self.get_shortest_path()
+
+    def sample_free_points(self, n: int = 1) -> list:
+        samples = []
+        n_samples = 0
+        while True:
+            array = np.random.uniform(-1, 1, 2)
+            sample = Point(array[0], array[1])
+            if not collisions.point_collides(sample, self.polygons, self.radius):
+                n_samples += 1
+                samples.append(sample)
+                if n == n_samples:
+                    return samples
 
     def sample(self, ntries: int = 5) -> list:
         milestones_candidates = [
@@ -85,11 +104,13 @@ class ProbabilisticRandomMap:
             new_edges += list(collision_free_segments)
         self.edges += new_edges
 
-    def update(self, th: float = 0.5, max_milestones: int = 200) -> bool:
+    def update(self, th: float = None, max_milestones: int = 200) -> bool:
         not_finished = True
         if self.path_exists or len(self.milestones) > max_milestones + 1:
             not_finished = False
         new_milestones = self.sample(1)
+        if th is None:
+            th = self.th
         self.connect(new_milestones, th)
         self.shortest_path = self.get_shortest_path()
 
