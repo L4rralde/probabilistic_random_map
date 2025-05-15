@@ -71,6 +71,7 @@ class Scene:
             for event in self.events:
                 if event.type == pygame.QUIT:
                     pygame.quit()
+                    self.finish()
                     sys.exit()
             self.delta_time = self.clock.tick(self.max_fps)/1000
             self.get_inputs()
@@ -100,6 +101,9 @@ class Scene:
             (2*point.y - self.screen_height)/self.screen_height
         )
         return new_point
+
+    def finish(self) -> None:
+        return
 
 class GLUtils:
     @staticmethod
