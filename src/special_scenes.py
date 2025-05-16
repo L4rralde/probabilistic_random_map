@@ -128,7 +128,7 @@ class PrmStarScene(PrmScene):
             return
         if self.prm.finished():
             print(f"N: {len(self.prm.milestones)}, th: {self.prm.th: .4f}, cost: {self.prm.cost: .4f}")
-            self.history['n'].append(self.prm.milestones)
+            self.history['n'].append(len(self.prm.milestones))
             self.history['th'].append(self.prm.th)
             self.history['costs'].append(self.prm.cost)
             new_start_center, new_goal = self.prm.sample_free_points(2)
