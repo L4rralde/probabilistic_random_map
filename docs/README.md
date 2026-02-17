@@ -1,5 +1,8 @@
 # Probabilistic Random Map
 
+## Technical report
+
+You can read the technical report in spanish in the follwoing [link](reporte.md)
 
 ## Installation
 
