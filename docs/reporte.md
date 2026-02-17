@@ -44,7 +44,7 @@ Si existe un camino o se separó una cantidad de iteraciones máximas, se detien
 ![caso3](imgs/caso3.jpeg)
 
 
-#### Escenario topológico
+#### Escenario patológico
 
 ![caso4](imgs/caso4.jpeg)
 
