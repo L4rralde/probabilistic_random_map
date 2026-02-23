@@ -1,8 +1,10 @@
+import pickle
+
 import pygame
 
 from scene.scenes import Point, GLScene, GLUtils
 from shapes import Polygon, Circle
-from prm import ProbabilisticRandomMap
+from prm_star import ProbabilisticRandomMapStar
 
 
 class Blinker:
@@ -40,11 +42,11 @@ class PolygonScene(GLScene):
             width: int,
             height: int,
             max_fps: int = 60,
-            thopological: bool = False,
+            patological: bool = False,
             **kwargs
         ) -> None:
         super().__init__(title, width, height, max_fps, **kwargs)
-        polygons = patologycal_grid if thopological else default_polygons
+        polygons = patologycal_grid if patological else default_polygons
         self.polygons = kwargs.get("polygons", polygons)
 
     def render(self) -> None:
@@ -62,11 +64,12 @@ class PrmScene(PolygonScene):
         self.start = Circle(Point(0, 0), 0.03)
         self.goal = Point(-0.5, 0)
         self.pause = True
-        self.prm = ProbabilisticRandomMap(
+        self.prm = ProbabilisticRandomMapStar(
             self.polygons,
             self.start.radius,
             self.start.center,
-            self.goal
+            self.goal,
+            n_samplles=kwargs.get('n_samples', 5)
         )
         self.update_cycle = 0
         self.blinker = Blinker(
@@ -98,11 +101,50 @@ class PrmScene(PolygonScene):
         super().update()
         if self.pause:
             return
-        if not self.prm.finished():
-            self.prm.update()
+        if self.prm.finished():
+            return
+        self.prm.update()
 
     def render(self) -> None:
         super().render()
         self.prm.draw()
         self.blinker.blink()
         self.start.draw(color = (251/255, 20/255, 0, 1.0))
+
+
+class PrmStarScene(PrmScene):
+    def __init__(self, title: str, width: int, height: int, max_fps: int = 60, **kwargs) -> None:
+        super().__init__(title, width, height, max_fps, **kwargs)
+        self.prm_finished_cnt = 0
+        self.history = {
+            'n': [],
+            'th': [],
+            'costs': []
+        }
+
+    def update(self) -> None:
+        super().update()
+        if self.pause:
+            return
+        if self.prm.finished():
+            print(f"N: {len(self.prm.milestones)}, th: {self.prm.th: .4f}, cost: {self.prm.cost: .4f}")
+            self.history['n'].append(len(self.prm.milestones))
+            self.history['th'].append(self.prm.th)
+            self.history['costs'].append(self.prm.cost)
+            new_start_center, new_goal = self.prm.sample_free_points(2)
+            self.start.center = new_start_center
+            self.goal = new_goal
+            self.prm.reset(self.start.center, self.goal)
+            self.prm_finished_cnt += 1
+            if self.prm_finished_cnt == 20:
+                self.prm.n_samples += 5
+                self.prm_finished_cnt = 0
+                self.prm.th = self.prm.get_optimal_th(self.prm.free_volume)
+            return
+        self.prm.update()
+
+    def finish(self) -> None:
+        print(self.history)
+        with open('filename.pickle', 'wb') as handle:
+            pickle.dump(self.history, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
